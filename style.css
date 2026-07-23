@@ -1,3 +1,7 @@
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
@@ -5,6 +9,7 @@ body {
     background-color: #f4f7f6;
     color: #333;
     padding-bottom: 60px; /* Space for footer */
+    line-height: 1.5;
 }
 
 nav {
@@ -13,6 +18,10 @@ nav {
     padding: 15px 30px;
     display: flex;
     align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
 
 nav h2 {
@@ -24,10 +33,12 @@ nav a {
     text-decoration: none;
     margin-right: 15px;
     font-weight: bold;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
 
 nav a:hover {
     color: #3498db;
+    transform: translateY(-1px);
 }
 
 main {
@@ -42,6 +53,12 @@ form {
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+form:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
 }
 
 input[type="text"], textarea {
@@ -52,6 +69,13 @@ input[type="text"], textarea {
     border-radius: 4px;
     box-sizing: border-box;
     font-family: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+input[type="text"]:focus, textarea:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+    outline: none;
 }
 
 button {
@@ -63,9 +87,14 @@ button {
     cursor: pointer;
     font-size: 16px;
     font-weight: bold;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-button:hover { background-color: #2980b9; }
+button:hover {
+    background-color: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
 
 /* Blog Card Styles (Matches JS Classes) */
 .blog-card {
@@ -75,6 +104,12 @@ button:hover { background-color: #2980b9; }
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     border-left: 5px solid #3498db;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.blog-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
 }
 
 .blog-card h2 {
@@ -111,6 +146,7 @@ button:hover { background-color: #2980b9; }
     text-decoration: none;
     display: inline-block;
     font-weight: bold;
+    transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .blog-actions button.delete-button {
@@ -121,10 +157,17 @@ button:hover { background-color: #2980b9; }
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
+    transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
-.blog-actions a.edit-button:hover { background-color: #d35400; }
-.blog-actions button.delete-button:hover { background-color: #c0392b; }
+.blog-actions a.edit-button:hover {
+    background-color: #d35400;
+    transform: translateY(-1px);
+}
+.blog-actions button.delete-button:hover {
+    background-color: #c0392b;
+    transform: translateY(-1px);
+}
 
 /* Ensure form buttons have spacing when multiple buttons are present */
 form button {
@@ -139,4 +182,5 @@ footer {
     position: fixed;
     bottom: 0;
     width: 100%;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
