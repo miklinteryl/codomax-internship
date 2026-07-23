@@ -2,30 +2,48 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-// Middleware to parse data submitted from HTML forms
+// Serve all static files (HTML, CSS, JS) from the current folder
+app.use(express.static(__dirname));
+
+// Middleware to parse JSON data sent from the frontend
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// GET Route: This handles requests to the homepage
-app.get('/', (req, res) => {
-    res.send('Welcome to the Blog Backend Server! This is a GET request.');
+// Temporary database (Array)
+let blogPosts = [];
+
+// API Route: Get all blogs
+app.get('/api/blogs', (req, res) => {
+    res.json(blogPosts);
 });
 
-// GET Route: This could eventually serve your Add Blog HTML page
-app.get('/add-blog', (req, res) => {
-    res.send('This route will eventually send the add-blog.html file.');
+// API Route: Add a new blog
+app.post('/api/blogs', (req, res) => {
+    const { title, content } = req.body;
+
+    // Validate required fields
+    if (!title || !content) {
+        return res.status(400).json({ error: 'Title and content are required.' });
+    }
+
+    if (typeof title !== 'string' || typeof content !== 'string') {
+        return res.status(400).json({ error: 'Title and content must be text.' });
+    }
+
+    const newBlog = {
+        id: Date.now(),
+        title: title.trim(),
+        content: content.trim(),
+        date: new Date().toLocaleDateString()
+    };
+
+    blogPosts.push(newBlog);
+    console.log('Server saved a new blog:', newBlog.title);
+
+    res.status(201).json({ message: 'Blog post created successfully!', blog: newBlog });
 });
 
-// POST Route: This will receive the form data when a user hits "Publish"
-app.post('/submit-blog', (req, res) => {
-    const blogTitle = req.body.title;
-    console.log('New blog submitted with title:', blogTitle);
-    
-    // Send a response back to the browser
-    res.send('Blog post successfully received by the server! (POST request successful)');
-});
-
-// Start the server
+// Start server
 app.listen(port, () => {
     console.log(`Backend server is running on http://localhost:${port}`);
 });

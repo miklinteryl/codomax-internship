@@ -1,35 +1,94 @@
-// Step 1: Select the form and input fields using the DOM
-const form = document.querySelector('form');
-const titleInput = document.getElementById('title');
-const contentInput = document.getElementById('content');
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form');
+    const titleInput = document.getElementById('title');
+    const contentInput = document.getElementById('content');
+    const container = document.getElementById('blogs-container');
 
-// Step 2: Listen for the 'submit' event when the button is clicked
-form.addEventListener('submit', function(event) {
-    
-    // Prevent the form from submitting and refreshing the page immediately
-    event.preventDefault();
-
-    // Get the text the user typed, removing any accidental spaces at the ends
-    const titleValue = titleInput.value.trim();
-    const contentValue = contentInput.value.trim();
-
-    // Step 3: Check if the title is empty
-    if (titleValue === "") {
-        alert("Wait! Please enter a blog title.");
-        titleInput.focus(); // Highlights the empty box
-        return; // Stops the code here so the form doesn't submit
+    // Utility to prevent code injection
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    // Step 4: Check if the content is empty
-    if (contentValue === "") {
-        alert("Wait! Please write some content for your blog.");
-        contentInput.focus();
-        return;
+    // Function to load blogs onto the homepage
+    async function loadBlogs() {
+        if (!container) return; // Only run if on index.html
+
+        try {
+            const res = await fetch('/api/blogs');
+            const blogs = await res.json();
+
+            container.innerHTML = ''; // Clear loading text
+
+            if (blogs.length === 0) {
+                container.innerHTML = '<p>No blog posts yet. Go add one!</p>';
+                return;
+            }
+
+            // Reverse to show newest first, then build the HTML cards
+            blogs.slice().reverse().forEach(blog => {
+                const article = document.createElement('article');
+                article.className = 'blog-card'; // Matches CSS
+
+                const title = document.createElement('h2');
+                title.textContent = blog.title;
+
+                const meta = document.createElement('p');
+                meta.className = 'blog-date'; // Matches CSS
+                meta.textContent = `Published on: ${blog.date}`;
+
+                const content = document.createElement('p');
+                content.className = 'blog-content'; // Matches CSS
+                content.innerHTML = escapeHtml(blog.content).replace(/\n/g, '<br>');
+
+                article.appendChild(title);
+                article.appendChild(meta);
+                article.appendChild(content);
+                container.appendChild(article);
+            });
+        } catch (err) {
+            console.error('Error:', err);
+            container.innerHTML = '<p>Error loading posts.</p>';
+        }
     }
 
-    // Step 5: If both boxes have text, success!
-    alert("Success! Your blog post is ready to be published.");
-    
-    // Clear the form fields for the next post
-    form.reset();
+    // Run the load function immediately when the page opens
+    loadBlogs();
+
+    // Function to handle form submission
+    if (form) {
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault(); // Stop page refresh
+
+            const titleValue = titleInput.value.trim();
+            const contentValue = contentInput.value.trim();
+
+            if (!titleValue || !contentValue) {
+                alert('Please fill out both the title and content!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/blogs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: titleValue, content: contentValue })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Blog uploaded successfully:', data);
+                    // Redirect straight to the home page to see the new post
+                    window.location.href = 'index.html';
+                } else {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    console.error('Server response:', response.status, errorData);
+                    alert(`Error: ${errorData.error || 'Server error saving the post.'}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Could not connect. Make sure your server is running!');
+            }
+        });
+    }
 });
