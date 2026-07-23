@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const contentInput = document.getElementById('content');
     const container = document.getElementById('blogs-container');
 
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get('id');
+
     // Utility to prevent code injection
     function escapeHtml(str) {
         if (!str) return '';
@@ -41,9 +44,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 content.className = 'blog-content'; // Matches CSS
                 content.innerHTML = escapeHtml(blog.content).replace(/\n/g, '<br>');
 
+                const actions = document.createElement('div');
+                actions.className = 'blog-actions';
+
+                const editLink = document.createElement('a');
+                editLink.href = `add-blog.html?id=${blog.id}`;
+                editLink.textContent = 'Edit';
+                editLink.className = 'edit-button';
+
+                actions.appendChild(editLink);
+
                 article.appendChild(title);
                 article.appendChild(meta);
                 article.appendChild(content);
+                article.appendChild(actions);
                 container.appendChild(article);
             });
         } catch (err) {
@@ -55,8 +69,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Run the load function immediately when the page opens
     loadBlogs();
 
-    // Function to handle form submission
+    // Function to handle form submission (and edit mode)
     if (form) {
+        // If editing, load existing blog into form
+        if (editId) {
+            (async () => {
+                try {
+                    const res = await fetch(`/api/blogs/${editId}`);
+                    if (res.ok) {
+                        const blog = await res.json();
+                        titleInput.value = blog.title || '';
+                        contentInput.value = blog.content || '';
+                        const submitButton = form.querySelector('button[type="submit"]');
+                        if (submitButton) submitButton.textContent = 'Save Changes';
+                    } else {
+                        console.error('Failed to load blog for editing', res.status);
+                        alert('Could not load the blog to edit.');
+                    }
+                } catch (err) {
+                    console.error('Error loading blog:', err);
+                    alert('Could not load the blog to edit. Is the server running?');
+                }
+            })();
+        }
+
         form.addEventListener('submit', async function (event) {
             event.preventDefault(); // Stop page refresh
 
@@ -69,21 +105,40 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const response = await fetch('/api/blogs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: titleValue, content: contentValue })
-                });
+                if (editId) {
+                    // Update existing blog
+                    const response = await fetch(`/api/blogs/${editId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: titleValue, content: contentValue })
+                    });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Blog uploaded successfully:', data);
-                    // Redirect straight to the home page to see the new post
-                    window.location.href = 'index.html';
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Blog updated successfully:', data);
+                        window.location.href = 'index.html';
+                    } else {
+                        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                        console.error('Server response:', response.status, errorData);
+                        alert(`Error: ${errorData.error || 'Server error updating the post.'}`);
+                    }
                 } else {
-                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                    console.error('Server response:', response.status, errorData);
-                    alert(`Error: ${errorData.error || 'Server error saving the post.'}`);
+                    // Create new blog
+                    const response = await fetch('/api/blogs', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: titleValue, content: contentValue })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Blog uploaded successfully:', data);
+                        window.location.href = 'index.html';
+                    } else {
+                        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                        console.error('Server response:', response.status, errorData);
+                        alert(`Error: ${errorData.error || 'Server error saving the post.'}`);
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);

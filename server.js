@@ -43,6 +43,40 @@ app.post('/api/blogs', (req, res) => {
     res.status(201).json({ message: 'Blog post created successfully!', blog: newBlog });
 });
 
+// API Route: Get single blog by id
+app.get('/api/blogs/:id', (req, res) => {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid blog id.' });
+
+    const blog = blogPosts.find(b => b.id === id);
+    if (!blog) return res.status(404).json({ error: 'Blog not found.' });
+
+    res.json(blog);
+});
+
+// API Route: Update a blog by id
+app.put('/api/blogs/:id', (req, res) => {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid blog id.' });
+
+    const { title, content } = req.body;
+    if (!title || !content) return res.status(400).json({ error: 'Title and content are required.' });
+    if (typeof title !== 'string' || typeof content !== 'string') return res.status(400).json({ error: 'Title and content must be text.' });
+
+    const idx = blogPosts.findIndex(b => b.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Blog not found.' });
+
+    blogPosts[idx] = {
+        ...blogPosts[idx],
+        title: title.trim(),
+        content: content.trim(),
+        date: new Date().toLocaleDateString()
+    };
+
+    console.log('Server updated blog:', blogPosts[idx].title);
+    res.json({ message: 'Blog updated successfully!', blog: blogPosts[idx] });
+});
+
 // Start server
 app.listen(port, () => {
     console.log(`Backend server is running on http://localhost:${port}`);
