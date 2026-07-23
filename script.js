@@ -52,7 +52,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 editLink.textContent = 'Edit';
                 editLink.className = 'edit-button';
 
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.className = 'delete-button';
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    if (!confirm('Are you sure you want to delete this post?')) return;
+                    try {
+                        const res = await fetch(`/api/blogs/${blog.id}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            // Refresh the list after successful deletion
+                            await loadBlogs();
+                        } else {
+                            const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+                            alert(`Delete failed: ${err.error || res.status}`);
+                        }
+                    } catch (err) {
+                        console.error('Delete error', err);
+                        alert('Could not delete post. Is the server running?');
+                    }
+                });
+
                 actions.appendChild(editLink);
+                actions.appendChild(deleteBtn);
 
                 article.appendChild(title);
                 article.appendChild(meta);
@@ -82,6 +105,37 @@ document.addEventListener('DOMContentLoaded', () => {
                         contentInput.value = blog.content || '';
                         const submitButton = form.querySelector('button[type="submit"]');
                         if (submitButton) submitButton.textContent = 'Save Changes';
+
+                        // Add a delete button to the form when editing
+                        let deleteButton = form.querySelector('button.delete-button');
+                        if (!deleteButton) {
+                            deleteButton = document.createElement('button');
+                            deleteButton.type = 'button';
+                            deleteButton.textContent = 'Delete Post';
+                            deleteButton.className = 'delete-button';
+                            deleteButton.style.marginLeft = '8px';
+                            deleteButton.addEventListener('click', async () => {
+                                if (!confirm('Are you sure you want to delete this post?')) return;
+                                try {
+                                    const resDel = await fetch(`/api/blogs/${editId}`, { method: 'DELETE' });
+                                    if (resDel.ok) {
+                                        window.location.href = 'index.html';
+                                    } else {
+                                        const err = await resDel.json().catch(() => ({ error: 'Unknown error' }));
+                                        alert(`Delete failed: ${err.error || resDel.status}`);
+                                    }
+                                } catch (err) {
+                                    console.error('Delete error:', err);
+                                    alert('Could not delete the post. Is the server running?');
+                                }
+                            });
+
+                            if (submitButton && submitButton.parentNode) {
+                                submitButton.parentNode.appendChild(deleteButton);
+                            } else {
+                                form.appendChild(deleteButton);
+                            }
+                        }
                     } else {
                         console.error('Failed to load blog for editing', res.status);
                         alert('Could not load the blog to edit.');

@@ -77,6 +77,20 @@ app.put('/api/blogs/:id', (req, res) => {
     res.json({ message: 'Blog updated successfully!', blog: blogPosts[idx] });
 });
 
+// API Route: Delete a blog by id
+app.delete('/api/blogs/:id', (req, res) => {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid blog id.' });
+
+    const idx = blogPosts.findIndex(b => b.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Blog not found.' });
+
+    const removed = blogPosts.splice(idx, 1)[0];
+    console.log('Server deleted blog:', removed.title);
+
+    res.json({ message: 'Blog deleted successfully!' });
+});
+
 // Start server
 app.listen(port, () => {
     console.log(`Backend server is running on http://localhost:${port}`);
